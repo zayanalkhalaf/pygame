@@ -16,43 +16,60 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BROWN = (139, 69, 19)
 
+# Define fruit colors
+FRUIT_COLORS = [RED, GREEN, (255, 165, 0), (255, 255, 0)]  # Red (apple), Green (lime), Orange, Yellow (banana)
+
 # Set up display
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Catch the Falling Apples")
+pygame.display.set_caption("Catch the Falling Fruits")
 clock = pygame.time.Clock()
 
 # Basket settings
 BASKET_WIDTH = 100
-BASKET_HEIGHT = 20
+BASKET_HEIGHT = 40
 basket_x = (SCREEN_WIDTH - BASKET_WIDTH) // 2
-basket_y = SCREEN_HEIGHT - 50
-basket_speed = 10
+basket_y = SCREEN_HEIGHT - 100
+basket_speed = 15
 
 # Apple settings
 APPLE_RADIUS = 20
-apple_speed = 5
+apple_speed = 10
 apples = []
 
 # Score
 score = 0
 font = pygame.font.Font(None, 36)
 
-# Function to create apples
-def create_apple():
+# Function to create apples (now fruits)
+def create_fruit():
     x = random.randint(APPLE_RADIUS, SCREEN_WIDTH - APPLE_RADIUS)
     y = -APPLE_RADIUS
-    apples.append(pygame.Rect(x, y, APPLE_RADIUS * 2, APPLE_RADIUS * 2))
+    color = random.choice(FRUIT_COLORS)  # Randomly select a fruit color
+    fruit = {"rect": pygame.Rect(x, y, APPLE_RADIUS * 2, APPLE_RADIUS * 2), "color": color}
+    apples.append(fruit)
 
 # Function to draw text
 def draw_text(text, color, x, y):
     text_surface = font.render(text, True, color)
     screen.blit(text_surface, (x, y))
 
+# Draw basket
+def draw_basket(x, y, width, height):
+    # Draw the basket base (rectangle)
+    pygame.draw.rect(screen, BROWN, (x, y, width, height))
+    
+    # Draw the basket handle (arc)
+    pygame.draw.arc(
+        screen, BROWN, 
+        (x - 10, y - height, width + 20, height * 2), 
+        3.14, 0, 5  # Arc from left to right
+    )
+
 # Game loop
 def game_loop():
     global basket_x, score, apple_speed
     apples.clear()
-    create_apple()
+    create_fruit()
     running = True
 
     while running:
@@ -70,29 +87,28 @@ def game_loop():
         if keys[pygame.K_RIGHT] and basket_x < SCREEN_WIDTH - BASKET_WIDTH:
             basket_x += basket_speed
 
-        # Update apple positions
-        for apple in apples:
-            apple.y += apple_speed
-            if apple.y > SCREEN_HEIGHT:
-                apples.remove(apple)
-                create_apple()
+        # Update fruit positions
+        for fruit in apples:
+            fruit["rect"].y += apple_speed
+            if fruit["rect"].y > SCREEN_HEIGHT:
+                apples.remove(fruit)
+                create_fruit()
 
-        # Check for catching apples
+        # Check for catching fruits
         basket_rect = pygame.Rect(basket_x, basket_y, BASKET_WIDTH, BASKET_HEIGHT)
-        for apple in apples:
-            if basket_rect.colliderect(apple):
-                apples.remove(apple)
+        for fruit in apples:
+            if basket_rect.colliderect(fruit["rect"]):
+                apples.remove(fruit)
                 score += 1
-                create_apple()
-                if score % 10 == 0:  # Increase speed every 10 points
-                    apple_speed += 1
+                apple_speed += 0.2  # Increase speed slightly with every caught fruit
+                create_fruit()
 
         # Draw basket
-        pygame.draw.rect(screen, BROWN, basket_rect)
+        draw_basket(basket_x, basket_y, BASKET_WIDTH, BASKET_HEIGHT)
 
-        # Draw apples
-        for apple in apples:
-            pygame.draw.circle(screen, RED, apple.center, APPLE_RADIUS)
+        # Draw fruits
+        for fruit in apples:
+            pygame.draw.circle(screen, fruit["color"], fruit["rect"].center, APPLE_RADIUS)
 
         # Display score
         draw_text(f"Score: {score}", BLACK, 10, 10)
